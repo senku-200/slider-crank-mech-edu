@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #0a0a0a;
   --foreground: #171717;
 }
 
@@ -85,3 +85,51 @@ body {
 * {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
+
+/* Educational blog responsive tweaks */
+.edu-blog {
+  font-size: 1rem;
+}
+.edu-blog p,
+.edu-blog li { line-height: 1.55; }
+
+@media (max-width: 640px) {
+  .edu-blog {
+    margin: 2rem auto !important;
+    padding: 1.75rem 1.1rem !important;
+    border-radius: 14px !important;
+  }
+  .edu-blog h1 { font-size: 1.6rem !important; }
+  .edu-blog h2 { font-size: 1.15rem !important; }
+  .edu-blog h3 { font-size: 1.05rem !important; }
+  .edu-blog p, .edu-blog li { font-size: 0.95rem !important; }
+  .edu-blog figure svg { max-width: 100%; height: auto; }
+  .edu-blog ul { padding-left: 1.1rem !important; }
+}
+
+/* KaTeX overflow handling */
+.edu-blog .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.5rem 0.75rem;
+  margin: 0.75rem 0 1rem;
+  border-radius: 0.5rem;
+  background: rgba(255,255,255,0.04);
+}
+.edu-blog .katex-display > .katex {
+  /* Prevent KaTeX from forcing min width */
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .edu-blog .katex-display > .katex { font-size: 0.9rem; }
+}
+@media (max-width: 420px) {
+  .edu-blog .katex-display > .katex { font-size: 0.8rem; }
+}
+
+/* Hide scrollbars aesthetically (still scrollable) */
+.edu-blog .katex-display::-webkit-scrollbar { height: 6px; }
+.edu-blog .katex-display::-webkit-scrollbar-track { background: transparent; }
+.edu-blog .katex-display::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+.dark .edu-blog .katex-display { background: rgba(255,255,255,0.06); }

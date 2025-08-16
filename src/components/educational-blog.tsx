@@ -8,6 +8,7 @@ import Image from 'next/image';
 export default function EducationalBlog() {
   return (
     <section
+      className="edu-blog"
       style={{
         maxWidth: '800px',
         width: '100%',
@@ -22,9 +23,14 @@ export default function EducationalBlog() {
         alignItems: 'center',
       }}
     >
-      <h1 style={{ fontSize: '2.2rem', fontWeight: 700, marginBottom: '1.5rem', textAlign: 'center', letterSpacing: '-1px' }}>
+      <h1 style={{ fontSize: '2.2rem', fontWeight: 700, marginBottom: '0.75rem', textAlign: 'center', letterSpacing: '-1px' }}>
         Slider-Crank Mechanism Educational Blog
       </h1>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }} aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-bounce">
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </div>
       <h2 style={{ fontSize: '1.3rem', fontWeight: 600, marginBottom: '1rem', textAlign: 'center' }}>
         Introduction & Components
       </h2>
@@ -85,8 +91,8 @@ export default function EducationalBlog() {
       <BlockMath math={String.raw`
 x = r \cos\theta + \sqrt{l^2 - (r \sin\theta)^2}
 `}/>
-      <p>Where:</p>
       <ul style={{ marginBottom: '1.5rem', fontSize: '1.05rem', alignSelf: 'flex-start', paddingLeft: '1.5rem' }}>
+        <p>Where:</p>
         <li><strong>x</strong>: Position of the slider</li>
         <li><strong>r</strong>: Length of the crank</li>
         <li><strong>l</strong>: Length of the connecting rod</li>

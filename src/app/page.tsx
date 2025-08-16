@@ -118,33 +118,53 @@ export default function Home() {
       </header>
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Mobile fallback notice */}
+        <div className="lg:hidden mb-8">
+          <div className="bg-[#1e2127] border border-amber-400/40 rounded-xl p-6 text-center space-y-4">
+            <h2 className="text-xl font-semibold text-amber-300">Desktop Experience Recommended</h2>
+            <p className="text-sm text-gray-300 leading-relaxed">
+              The interactive slider‑crank animation, real‑time graphs and controls are
+              not yet optimized for small mobile screens. For the full learning
+              experience (live animation, kinematic graphs and parameter tuning),
+              please visit on a desktop, laptop or larger tablet.
+            </p>
+            <p className="text-sm text-gray-400">You can still read the educational blog below 👇</p>
+            <a href="#edu-blog" className="inline-flex items-center gap-2 text-amber-300 hover:text-amber-200 font-medium transition-colors">
+              <span>Skip to Blog</span>
+              <svg className="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <div className="hidden lg:grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-6">
             <MechanismAnimation
               params={params}
               simulationState={simulationState}
               isPlaying={isPlaying}
             />
-            
+
             <div className="flex justify-center">
               <PresetSelector
                 currentPreset={currentPreset}
                 onPresetChange={handlePresetChange}
               />
             </div>
-            
+
             <div className="flex justify-center">
               <AnimationControls
                 isPlaying={isPlaying}
                 onPlayPause={handlePlayPause}
               />
             </div>
-            
+
             <div className="bg-[#1e2127] rounded-xl p-6 border border-gray-700">
               <RealTimeMeasurements simulationState={simulationState} />
             </div>
           </div>
-          
+
           <div className="space-y-6">
             <div className="bg-[#1e2127] rounded-xl p-6 border border-gray-700">
               <ParameterControls
@@ -153,7 +173,7 @@ export default function Home() {
                 difficulty="intermediate"
               />
             </div>
-            
+
             <div className="bg-[#1e2127] rounded-xl p-6 border border-gray-700">
               <MechanismGraphs
                 graphData={graphData}
@@ -162,12 +182,12 @@ export default function Home() {
               />
             </div>
           </div>
+        </div>
 
-            {/* Educational Blog Section - full width, centered below graphs */}
-            <div className="col-span-2 flex justify-center mt-8 w-full">
-            <EducationalBlog />
-            </div>
-      </div>
+        {/* Educational Blog Section - always visible; anchor for mobile skip link */}
+        <div id="edu-blog" className="flex justify-center mt-8 w-full col-span-2">
+          <EducationalBlog />
+        </div>
       </main>
     </div>
   )
