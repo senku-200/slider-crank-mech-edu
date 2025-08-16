@@ -1,103 +1,174 @@
-import Image from "next/image";
+'use client'
+
+import { useState, useEffect, useRef, useCallback } from 'react'
+import MechanismAnimation from '@/components/mechanism-animation'
+import { ParameterControls } from '@/components/parameter-controls'
+import { RealTimeMeasurements } from '@/components/real-time-measurements'
+import { MechanismGraphs } from '@/components/mechanism-graphs'
+import EducationalBlog from '@/components/educational-blog'
+import { PresetSelector } from '@/components/difficulty-selector'
+import { AnimationControls } from '@/components/animation-controls'
+import { 
+  MechanismParams, 
+  SimulationState, 
+  GraphData,
+  calculateSimulationState,
+  generateGraphData
+} from '@/lib/kinematics'
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [currentPreset, setCurrentPreset] = useState<'balanced' | 'high-speed' | 'high-rod' | 'compact'>('balanced')
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [crankAngle, setCrankAngle] = useState(0)
+  
+  const defaultParams: MechanismParams = { 
+    crankRadius: 50, 
+    connectingRodLength: 150, 
+    crankSpeed: 150 
+  }
+  
+  const [params, setParams] = useState<MechanismParams>(defaultParams)
+  
+  const [simulationState, setSimulationState] = useState<SimulationState>(
+    calculateSimulationState(0, defaultParams)
+  )
+  const [graphData, setGraphData] = useState<GraphData[]>(
+    generateGraphData(defaultParams)
+  )
+  
+  const animationRef = useRef<number | undefined>(undefined)
+  const lastTimeRef = useRef<number>(0)
+  const angleRef = useRef<number>(0)
+  const lastCommitRef = useRef<number>(0)
+  const COMMIT_INTERVAL_MS = 80 // commit angle/state to React ~12.5 fps (smooth canvas handles in-between)
+  
+  // Preset configurations
+  const presetConfigs = {
+    'balanced': { crankRadius: 50, connectingRodLength: 150, crankSpeed: 150 },
+    'high-speed': { crankRadius: 60, connectingRodLength: 180, crankSpeed: 300 },
+    'high-rod': { crankRadius: 40, connectingRodLength: 250, crankSpeed: 100 },
+    'compact': { crankRadius: 30, connectingRodLength: 120, crankSpeed: 400 }
+  }
+  
+  const handlePresetChange = (preset: 'balanced' | 'high-speed' | 'high-rod' | 'compact') => {
+    setCurrentPreset(preset)
+    const newParams = presetConfigs[preset]
+    setParams(newParams)
+  }
+  
+  // Update core simulation state each frame (angle driven). Heavy derived arrays generated only on param change.
+  useEffect(() => {
+    setSimulationState(calculateSimulationState(crankAngle, params))
+  }, [crankAngle, params])
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Regenerate graph data only when params change (or when play starts for freshness)
+  useEffect(() => {
+    setGraphData(generateGraphData(params))
+  }, [params])
+  
+  const animate = useCallback((currentTime: number) => {
+    if (!isPlaying) return
+    if (lastTimeRef.current === 0) {
+      lastTimeRef.current = currentTime
+      lastCommitRef.current = currentTime
+    }
+    const deltaTime = currentTime - lastTimeRef.current
+    const omega = (params.crankSpeed * 2 * Math.PI) / 60
+    const deltaAngle = omega * (deltaTime / 1000)
+    angleRef.current = (angleRef.current + deltaAngle) % (Math.PI * 2)
+    // Commit to React state only if enough time passed
+    if (currentTime - lastCommitRef.current >= COMMIT_INTERVAL_MS) {
+      setCrankAngle(angleRef.current)
+      lastCommitRef.current = currentTime
+    }
+    lastTimeRef.current = currentTime
+    animationRef.current = requestAnimationFrame(animate)
+  }, [isPlaying, params.crankSpeed])
+  
+  useEffect(() => {
+    if (isPlaying) {
+      lastTimeRef.current = 0
+      angleRef.current = crankAngle
+      animationRef.current = requestAnimationFrame(animate)
+    } else if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current)
+    }
+    return () => { if (animationRef.current) cancelAnimationFrame(animationRef.current) }
+    // crankAngle intentionally omitted: we only restart loop when play state toggles
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying, animate])
+  
+  const handlePlayPause = () => {
+    const newIsPlaying = !isPlaying
+    setIsPlaying(newIsPlaying)
+    
+  if (newIsPlaying) setGraphData(generateGraphData(params))
+  }
+  
+  return (
+    <div className="min-h-screen bg-[#282c34] text-white">
+      <header className="border-b border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-white font-poppins">
+              Slider-Crank Mechanism
+            </h1>
+          </div>
         </div>
+      </header>
+      
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-6">
+            <MechanismAnimation
+              params={params}
+              simulationState={simulationState}
+              isPlaying={isPlaying}
+            />
+            
+            <div className="flex justify-center">
+              <PresetSelector
+                currentPreset={currentPreset}
+                onPresetChange={handlePresetChange}
+              />
+            </div>
+            
+            <div className="flex justify-center">
+              <AnimationControls
+                isPlaying={isPlaying}
+                onPlayPause={handlePlayPause}
+              />
+            </div>
+            
+            <div className="bg-[#1e2127] rounded-xl p-6 border border-gray-700">
+              <RealTimeMeasurements simulationState={simulationState} />
+            </div>
+          </div>
+          
+          <div className="space-y-6">
+            <div className="bg-[#1e2127] rounded-xl p-6 border border-gray-700">
+              <ParameterControls
+                params={params}
+                onParamsChange={setParams}
+                difficulty="intermediate"
+              />
+            </div>
+            
+            <div className="bg-[#1e2127] rounded-xl p-6 border border-gray-700">
+              <MechanismGraphs
+                graphData={graphData}
+                isPlaying={isPlaying}
+                currentAngle={crankAngle}
+              />
+            </div>
+          </div>
+
+            {/* Educational Blog Section - full width, centered below graphs */}
+            <div className="col-span-2 flex justify-center mt-8 w-full">
+            <EducationalBlog />
+            </div>
+      </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
-  );
+  )
 }
